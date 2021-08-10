@@ -71,11 +71,20 @@ let modules = [
             side: "empty",
         }
     },
+    {
+        model: "house",
+        rotation: 0,
+        interfaces: {
+            top: "square",
+            bottom: "bottom_square",
+            side: "square",
+        }
+    },
 ]
 
 for (m of modules) {
     if (m.rotation === 0) {
-        for (let rotation = 1; rotation <= 3; rotation++) {
+        for (let rotation = 1; rotation <= 1; rotation++) {
             let copy = JSON.parse(JSON.stringify(m)) // Is this the best way to deep-copy an object?!
             copy.rotation = rotation
             modules.push(copy)
@@ -180,11 +189,19 @@ function areInterfacesCompatible(a, b) {
         return true
     }
 
+    if (a == "square" && b == "top_line") {
+        return true
+    }
+
     if (a == "object" && b == "square") {
         return true
     }
 
     if (a == "empty" && b == "square") {
+        return true
+    }
+
+    if (a == "bottom_square" && b == "square") {
         return true
     }
 
@@ -224,7 +241,7 @@ const geometry = new THREE.BoxGeometry()
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
 
 camera.position.y = height
-camera.position.x = -5
+camera.position.x = -3
 camera.position.z = 2
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.target = new THREE.Vector3(0, height / 2, 0)
