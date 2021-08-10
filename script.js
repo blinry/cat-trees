@@ -16,14 +16,67 @@ function loadModel(name) {
     })
 }
 
-let modelNames = ["pole", "platform_with_pole", "cat"]
 let models = {}
 
+let modules = [
+    {
+        model: "platform",
+        interfaces: {
+            top: "square",
+            bottom: "empty",
+            side: "top_line",
+        }
+    },
+    {
+        model: "pole",
+        interfaces: {
+            top: "pole",
+            bottom: "pole",
+            side: "empty",
+        }
+    },
+    {
+        model: "platform_with_pole",
+        interfaces: {
+            top: "square",
+            bottom: "pole",
+            side: "top_line",
+        }
+    },
+    {
+        model: "cat",
+        rotation: 0,
+        interfaces: {
+            top: "empty",
+            bottom: "object",
+            side: "empty",
+        }
+    },
+]
+
+for (m of modules) {
+    if (m.rotation === 0) {
+        for (let rotation = 1; rotation <= 3; rotation++) {
+            let copy = JSON.parse(JSON.stringify(m)) // Is this the best way to deep-copy an object?!
+            copy.rotation = rotation
+            modules.push(copy)
+        }
+    }
+}
+
+let modelNames = [...new Set(modules.map(m => m.model))] // The set conversion makes the values unique.
 let promises = modelNames.map(name => loadModel(`models/${name}.glb`).then(result => { models[name] = result }))
 
 let width = 3
 let height = 5
-let grid = Array(width).fill(null).map(() => Array(height).fill(null).map(() => Array(width).fill(null).map(() => modelNames.sample())))
+let grid = Array(width).fill(null).map(() => Array(height).fill(null).map(() => Array(width).fill(null).map(() => modules.sample())))
+
+for (let x = 0; x < width; x++) {
+    for (let z = 0; z < width; z++) {
+        grid[x][0][z] = modules[0]
+    }
+}
+
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color('gray')
@@ -36,14 +89,6 @@ document.body.appendChild(renderer.domElement)
 
 const geometry = new THREE.BoxGeometry()
 const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-
-/*const planeGeom = new THREE.PlaneGeometry(10, 10)
-planeGeom.rotateX(Math.PI / 2)
-planeGeom.translate(0, -1, 0)
-const planeMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide })
-const plane = new THREE.Mesh(planeGeom, planeMat)
-scene.add(plane)
-*/
 
 const light = new THREE.HemisphereLight()
 scene.add(light);
@@ -58,11 +103,14 @@ controls.update()
 Promise.all(promises).then(() => {
     grid.forEach((slice, x) => {
         slice.forEach((column, y) => {
-            column.forEach((tile, z) => {
-                let model = models[tile].clone()
+            column.forEach((module, z) => {
+                let model = models[module.model].clone()
                 model.translateX(x - width / 2 + 0.5)
                 model.translateY(y)
                 model.translateZ(z - width / 2 + 0.5)
+                if (module.rotation) {
+                    model.rotateY(module.rotation * Math.PI / 2)
+                }
                 scene.add(model)
             })
         })
