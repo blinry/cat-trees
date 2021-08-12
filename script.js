@@ -39,6 +39,7 @@ let modules = [
         }
     },
     {
+        rotation: 0,
         model: "empty",
         interfaces: {
             top: "empty",
@@ -80,7 +81,18 @@ let modules = [
             side: "square",
         }
     },
+    {
+        model: "ramp",
+        rotation: 0,
+        interfaces: {
+            top: "empty",
+            bottom: "bottom_square",
+            side: ["empty", "notempty", "empty", "empty"]
+        }
+    },
 ]
+
+// Positive X is forward!
 
 for (m of modules) {
     if (m.rotation === 0) {
@@ -95,8 +107,8 @@ for (m of modules) {
 let modelNames = modules.map(m => m.model).uniq() // The set conversion makes the values unique.
 let promises = modelNames.map(name => loadModel(`models/${name}.glb`).then(result => { models[name] = result }))
 
-let width = getRandomInt(1, 3)
-let depth = getRandomInt(1, 3)
+let width = getRandomInt(3, 5)
+let depth = getRandomInt(3, 5)
 let height = getRandomInt(4, 6)
 let grid = Array(width).fill(null).map(() => Array(height).fill(null).map(() => Array(depth).fill(null).map(() => modules)))
 
@@ -113,6 +125,24 @@ for (let x = 0; x < width; x++) {
     for (let z = 0; z < depth; z++) {
         grid[x][height - 1][z] = [modules[1]]
         propagateInfo(x, height - 1, z)
+    }
+}
+
+// Fill the sides with empty.
+for (let x = 0; x < width; x++) {
+    for (let y = 0; y < height; y++) {
+        grid[x][y][0] = [modules[1]]
+        propagateInfo(x, y, 0)
+        grid[x][y][depth - 1] = [modules[1]]
+        propagateInfo(x, y, depth - 1)
+    }
+}
+for (let z = 0; z < depth; z++) {
+    for (let y = 0; y < height; y++) {
+        grid[0][y][z] = [modules[1]]
+        propagateInfo(0, y, z)
+        grid[width - 1][y][z] = [modules[1]]
+        propagateInfo(width - 1, y, z)
     }
 }
 
@@ -185,6 +215,10 @@ function areInterfacesCompatible(a, b) {
         [a, b] = [b, a]
     }
 
+    if (a == "top_line" && b == "top_ramp") {
+        return true
+    }
+
     if (a == "empty" && b == "top_line") {
         return true
     }
@@ -209,6 +243,14 @@ function areInterfacesCompatible(a, b) {
         return true
     }
 
+    if (a == "notempty") {
+        return b != "empty"
+    }
+
+    if (b == "notempty") {
+        return a != "empty"
+    }
+
     return false
 }
 
@@ -218,8 +260,30 @@ function areModulesCompatible(from, to, dx, dy, dz) {
     } else if (dx == 0 && dy == -1 && dz == 0) {
         return areInterfacesCompatible(from.interfaces.bottom, to.interfaces.top)
     } else if (dy == 0) {
-        // Modules should be side-by-side.
-        return areInterfacesCompatible(from.interfaces.side, to.interfaces.side)
+        if (dx === 1) {
+            var dir = 0
+        }
+        if (dz === -1) {
+            var dir = 1
+        }
+        if (dx === -1) {
+            var dir = 2
+        }
+        if (dz === 1) {
+            var dir = 3
+        }
+        if (Array.isArray(from.interfaces.side)) {
+            var fromInterface = from.interfaces.side[(4 - from.rotation + dir) % 4]
+        } else {
+            var fromInterface = from.interfaces.side
+        }
+        if (Array.isArray(to.interfaces.side)) {
+            var toInterface = to.interfaces.side[(4 - to.rotation + dir + 2) % 4]
+        } else {
+            var toInterface = to.interfaces.side
+        }
+
+        return areInterfacesCompatible(fromInterface, toInterface)
     }
 }
 
