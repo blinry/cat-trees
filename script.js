@@ -333,7 +333,13 @@ function clearThree(obj) {
 function render() {
     clearThree(scene)
 
-    const light = new THREE.HemisphereLight()
+    const ambient = new THREE.AmbientLight(0xfff7db, 0.8)
+    scene.add(ambient);
+
+    const light = new THREE.DirectionalLight()
+    light.position.x += 3
+    light.position.y += 3
+    light.position.z += 3
     scene.add(light);
 
     grid.forEach((slice, x) => {
