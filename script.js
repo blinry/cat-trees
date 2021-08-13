@@ -27,8 +27,6 @@ function loadModel(name) {
     })
 }
 
-let models = {}
-
 let modules = [
     {
         model: "platform",
@@ -87,10 +85,12 @@ let modules = [
         interfaces: {
             top: "empty",
             bottom: "bottom_square",
-            side: ["empty", "notempty", "empty", "empty"]
+            side: ["empty", "ramp_top", "empty", "empty"]
         }
     },
 ]
+
+let models = {}
 
 // Positive X is forward!
 
@@ -153,7 +153,7 @@ function collapseStep() {
     grid.forEach((slice, x) => {
         slice.forEach((column, y) => {
             column.forEach((modules, z) => {
-                if (modules.length < lowestOptionCount && modules.length > 1) {
+                if (modules.length <= lowestOptionCount && modules.length > 1) {
                     lowestOptionCount = modules.length
                     lowestOptionModule = { x, y, z }
                 }
@@ -243,11 +243,11 @@ function areInterfacesCompatible(a, b) {
         return true
     }
 
-    if (a == "notempty") {
+    if (a == "ramp_top") {
         return b != "empty"
     }
 
-    if (b == "notempty") {
+    if (b == "ramp_top") {
         return a != "empty"
     }
 
