@@ -21,6 +21,12 @@ function loadModel(name) {
         loader.load(
             `${name}`,
             function(gltf) {
+                gltf.scene.traverse(function(node) {
+                    if (node.isMesh) {
+                        node.castShadow = true
+                        node.receiveShadow = true
+                    }
+                })
                 resolve(gltf.scene)
             }
         )
@@ -30,6 +36,7 @@ function loadModel(name) {
 let modules = [
     {
         model: "platform",
+        rotation: 0,
         interfaces: {
             top: "square",
             bottom: "bedrock",
@@ -37,8 +44,8 @@ let modules = [
         }
     },
     {
-        rotation: 0,
         model: "empty",
+        rotation: 0,
         interfaces: {
             top: "empty",
             bottom: "empty",
@@ -47,6 +54,7 @@ let modules = [
     },
     {
         model: "pole",
+        rotation: 0,
         interfaces: {
             top: "pole",
             bottom: "pole",
@@ -55,6 +63,7 @@ let modules = [
     },
     {
         model: "platform_with_pole",
+        rotation: 0,
         interfaces: {
             top: "square",
             bottom: "pole",
@@ -72,7 +81,6 @@ let modules = [
     },
     {
         model: "house",
-        rotation: 0,
         interfaces: {
             top: "square",
             bottom: "bottom_square",
@@ -96,7 +104,7 @@ let models = {}
 
 for (m of modules) {
     if (m.rotation === 0) {
-        for (let rotation = 1; rotation <= 1; rotation++) {
+        for (let rotation = 1; rotation <= 3; rotation++) {
             let copy = JSON.parse(JSON.stringify(m)) // Is this the best way to deep-copy an object?!
             copy.rotation = rotation
             modules.push(copy)
@@ -206,6 +214,10 @@ function propagateInfo(x, y, z) {
 }
 
 function areInterfacesCompatible(a, b) {
+    if (a == "ramp_top" && b == "ramp_top") {
+        return false
+    }
+
     if (a == b) {
         return true
     }
@@ -213,10 +225,6 @@ function areInterfacesCompatible(a, b) {
     // Sort them consistently.
     if (a > b) {
         [a, b] = [b, a]
-    }
-
-    if (a == "top_line" && b == "top_ramp") {
-        return true
     }
 
     if (a == "empty" && b == "top_line") {
@@ -299,6 +307,10 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 
 const renderer = new THREE.WebGLRenderer()
 renderer.setSize(window.innerWidth, window.innerHeight)
+renderer.shadowMap.enabled = true
+renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.antialias = true
+
 document.body.appendChild(renderer.domElement)
 
 const geometry = new THREE.BoxGeometry()
@@ -339,7 +351,11 @@ function render() {
     const light = new THREE.DirectionalLight()
     light.position.x += 3
     light.position.y += 3
-    light.position.z += 3
+    light.position.z += 1
+    light.castShadow = true
+    light.shadow.mapSize.width = 4 * 512
+    light.shadow.mapSize.height = 4 * 512
+    light.shadow.bias = -0.0001
     scene.add(light);
 
     grid.forEach((slice, x) => {
