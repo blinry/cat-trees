@@ -81,6 +81,16 @@ let modules = [
     },
     {
         model: "house",
+        rotation: 0,
+        interfaces: {
+            top: "square",
+            bottom: "bottom_square",
+            side: "square",
+        }
+    },
+    {
+        model: "house_with_cat",
+        rotation: 0,
         interfaces: {
             top: "square",
             bottom: "bottom_square",
